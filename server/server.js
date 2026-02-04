@@ -4,6 +4,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import Groq from "groq-sdk";
 import { pipeline } from '@xenova/transformers';
+import multer from 'multer';
+import pdf from 'pdf-parse';
 import { Knowledge } from './models/Knowledge.js';
 
 dotenv.config();
@@ -45,6 +47,44 @@ app.get('/api/history', async (req, res) => {
     res.json(history);
   } catch (error) {
     res.status(500).json({ error: "Geçmiş yüklenemedi" });
+  }
+});
+
+const upload = multer({ storage: multer.memoryStorage() }); // Dosyayı RAM'de tut
+
+app.post('/api/upload-pdf', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).send("Dosya yüklenmedi.");
+
+    // 1. PDF'i Metne Çevir
+    const data = await pdf(req.file.buffer);
+    const fullText = data.text;
+
+    // 2. Metni Parçalara Böl (Chunking) - Basit bir yöntem:
+    // Her 500 karakterde bir bölüyoruz.
+    const chunks = fullText.match(/[\s\S]{1,500}/g) || [];
+
+    const generateEmbedding = await getExtractor(); // Xenova modelimiz
+
+    console.log(`${chunks.length} parça işleniyor...`);
+
+    // 3. Her parçayı vektöre çevir ve kaydet
+    for (const chunk of chunks) {
+      const output = await generateEmbedding(chunk, { pooling: 'mean', normalize: true });
+      const embedding = Array.from(output.data);
+
+      await Knowledge.create({
+        title: req.file.originalname,
+        content: chunk,
+        embedding: embedding,
+        metadata: { source: 'user-upload' }
+      });
+    }
+
+    res.json({ message: "PDF başarıyla işlendi ve zekaya eklendi!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "PDF işleme hatası" });
   }
 });
 

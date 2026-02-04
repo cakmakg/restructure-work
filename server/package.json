@@ -17,6 +17,8 @@
     "express": "^5.2.1",
     "groq-sdk": "^0.37.0",
     "mongoose": "^9.1.5",
-    "openai": "^6.16.0"
+    "multer": "^2.0.2",
+    "openai": "^6.16.0",
+    "pdf-parse": "^2.4.5"
   }
 }
