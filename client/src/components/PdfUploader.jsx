@@ -2,39 +2,39 @@ import { useState } from 'react';
 
 export default function PdfUploader() {
   const [file, setFile] = useState(null);
-  const [category, setCategory] = useState(""); // Kategori için yeni state
+  const [category, setCategory] = useState(""); // Neuer State für die Kategorie
   const [loading, setLoading] = useState(false);
 
   const handleUpload = async () => {
-    // Validasyon: Dosya ve kategori boş olmamalı
-    if (!file) return alert("Lütfen bir PDF dosyası seçin!");
-    if (!category.trim()) return alert("Lütfen bu döküman için bir kategori (etiket) girin!");
+    // Validierung: Datei und Kategorie dürfen nicht leer sein
+    if (!file) return alert("Bitte wählen Sie eine PDF-Datei aus!");
+    if (!category.trim()) return alert("Bitte geben Sie eine Kategorie (Tag) für dieses Dokument ein!");
 
     setLoading(true);
 
-    // DİKKAT: Dosya yüklemelerinde JSON değil, FormData kullanılır.
+    // ACHTUNG: Bei Datei-Uploads wird FormData verwendet, nicht JSON.
     const formData = new FormData();
-    formData.append('file', file);       // PDF dosyası
-    formData.append('category', category); // Kategori ismi (req.body.category olacak)
+    formData.append('file', file);       // PDF-Datei
+    formData.append('category', category); // Kategoriename (wird req.body.category sein)
 
     try {
       const res = await fetch('http://localhost:5000/api/upload-pdf', {
         method: 'POST',
-        body: formData, // Header eklemene gerek yok, tarayıcı FormData için otomatik ayarlar
+        body: formData, // Header ist nicht nötig, der Browser setzt das automatisch für FormData
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert(`Başarılı: ${data.message}`);
-        setFile(null);     // Seçilen dosyayı temizle
-        setCategory("");   // Kategori kutusunu temizle
+        alert(`Erfolg: ${data.message}`);
+        setFile(null);     // Ausgewählte Datei löschen
+        setCategory("");   // Kategoriefeld leeren
       } else {
-        alert(`Hata: ${data.error}`);
+        alert(`Fehler: ${data.error}`);
       }
     } catch (err) {
-      console.error("Yükleme hatası:", err);
-      alert("Sunucuya ulaşılamadı!");
+      console.error("Upload-Fehler:", err);
+      alert("Server nicht erreichbar!");
     } finally {
       setLoading(false);
     }
@@ -42,13 +42,13 @@ export default function PdfUploader() {
 
   return (
     <div className="upload-section" style={styles.container}>
-      <h3 style={styles.title}>Zekaya Yeni Döküman Ekle</h3>
+      <h3 style={styles.title}>Neues Dokument zur KI hinzufügen</h3>
       
       <div style={styles.inputGroup}>
-        <label>Kategori Adı:</label>
+        <label>Kategoriename:</label>
         <input 
           type="text" 
-          placeholder="Örn: Fizik, Şirket-İçi, Yemek-Tarifleri" 
+          placeholder="Z. B.: Physik, Intern, Rezepte" 
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           style={styles.textInput}
@@ -56,7 +56,7 @@ export default function PdfUploader() {
       </div>
 
       <div style={styles.inputGroup}>
-        <label>PDF Dosyası:</label>
+        <label>PDF-Datei:</label>
         <input 
           type="file" 
           accept=".pdf" 
@@ -73,13 +73,13 @@ export default function PdfUploader() {
           backgroundColor: (loading || !file || !category) ? '#ccc' : '#28a745'
         }}
       >
-        {loading ? "İşleniyor (Vektörler Oluşturuluyor...)" : "PDF'i Analiz Et ve Kaydet"}
+        {loading ? "Wird verarbeitet (Vektoren werden erstellt...)" : "PDF analysieren und speichern"}
       </button>
     </div>
   );
 }
 
-// Basit inline stiller (Daha sonra Tailwind veya CSS'e taşıyabilirsin)
+// Einfache Inline-Styles (Später können Sie dies auf Tailwind oder CSS übertragen)
 const styles = {
   container: {
     padding: '20px',

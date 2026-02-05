@@ -2,51 +2,52 @@ import { useState, useRef } from 'react';
 import { Send, User, Bot, Settings, RefreshCw } from 'lucide-react';
 
 const ChatComponent = () => {
-  // --- STATE YÖNETİMİ ---
-  const [activeCategory, setActiveCategory] = useState("Genel");
+  // --- STATE-MANAGEMENT ---
+  // Varsayılan kategoriyi 'Allgemein' (Genel) yaptık.
+  const [activeCategory, setActiveCategory] = useState("Allgemein"); 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // Mesajları kendimiz tutuyoruz
+  // Wir speichern die Nachrichten selbst
   const [messages, setMessages] = useState([]);
 
-  // Otomatik kaydırma için referans
+  // Referenz für das automatische Scrollen
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // --- MESAJ GÖNDERME FONKSİYONU ---
+  // --- NACHRICHTEN-SENDE-FUNKTION ---
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // 1. Kullanıcı mesajını ekrana ekle
+    // 1. Benutzernachricht auf dem Bildschirm anzeigen
     const userMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     
-    const currentInput = input; // Inputu sakla
+    const currentInput = input; // Eingabe speichern
     const currentCategory = activeCategory;
-    setInput(""); // Kutuyu temizle
+    setInput(""); // Eingabefeld leeren
     setIsLoading(true);
 
     try {
-      // 2. Backend'e İstek At (Manuel Fetch)
+      // 2. Anfrage an das Backend senden (manueller Fetch)
       const response = await fetch('http://localhost:5000/api/rag-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: currentInput,
           category: currentCategory,
-          messages: [...messages, userMessage] // Geçmişi de gönderelim
+          messages: [...messages, userMessage] // Verlauf ebenfalls senden
         })
       });
 
-      if (!response.ok) throw new Error("Sunucu hatası");
+      if (!response.ok) throw new Error("Serverfehler");
 
-      // 3. Stream (Akış) Okuma Hazırlığı
-      // Cevap gelmeye başladığında boş bir AI mesajı ekle
+      // 3. Vorbereitung zum Lesen des Streams
+      // Leere KI-Nachricht hinzufügen, wenn die Antwort beginnt
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       const reader = response.body.getReader();
@@ -62,7 +63,7 @@ const ChatComponent = () => {
         if (chunkValue) {
           aiResponseText += chunkValue;
           
-          // Son eklediğimiz AI mesajını güncelle
+          // Die zuletzt hinzugefügte KI-Nachricht aktualisieren
           setMessages(prev => {
             const newMessages = [...prev];
             const lastMsg = newMessages[newMessages.length - 1];
@@ -76,10 +77,10 @@ const ChatComponent = () => {
       }
 
     } catch (err) {
-      console.error("Hata:", err);
-      alert("Bir hata oluştu: " + err.message);
-      // Hata durumunda AI mesajına hata notu düşebiliriz
-      setMessages(prev => [...prev, { role: 'assistant', content: "⚠️ Bir hata oluştu, lütfen tekrar deneyin." }]);
+      console.error("Fehler:", err);
+      alert("Ein Fehler ist aufgetreten: " + err.message);
+      // Im Fehlerfall können wir einen Fehlerhinweis zur KI-Nachricht hinzufügen
+      setMessages(prev => [...prev, { role: 'assistant', content: "⚠️ Ein Fehler ist aufgetreten, bitte versuchen Sie es erneut." }]);
     } finally {
       setIsLoading(false);
       scrollToBottom();
@@ -94,23 +95,23 @@ const ChatComponent = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Settings size={18} color="#666" />
           <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
-            Kategori:
+            Kategorie:
           </span>
         </div>
         <input 
           type="text" 
           value={activeCategory}
           onChange={(e) => setActiveCategory(e.target.value)}
-          placeholder="Örn: Test-1"
+          placeholder="Z. B.: Test-1"
           style={styles.categoryInput}
         />
       </div>
 
-      {/* --- MESAJ LİSTESİ --- */}
+      {/* --- NACHRICHTENLISTE --- */}
       <div className="messages-list" style={styles.messageList}>
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', color: '#999', marginTop: '50px' }}>
-            <p>"{activeCategory}" kategorisindeki dökümanlar hakkında soru sor.</p>
+            <p>Stellen Sie Fragen zu Dokumenten in der Kategorie "{activeCategory}".</p>
           </div>
         )}
 
@@ -127,18 +128,18 @@ const ChatComponent = () => {
         
         {isLoading && messages[messages.length - 1]?.role === 'user' && (
           <div style={{ padding: 10, fontStyle: 'italic', color: '#666', fontSize: '13px', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <RefreshCw size={14} className="spin" /> AI düşünüyor...
+            <RefreshCw size={14} className="spin" /> KI denkt nach...
           </div>
         )}
         
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- INPUT FORMU --- */}
+      {/* --- EINGABEFORMULAR --- */}
       <form onSubmit={handleSendMessage} style={styles.form}>
         <input
           value={input}
-          placeholder="Bir soru sor..."
+          placeholder="Stellen Sie eine Frage..."
           onChange={(e) => setInput(e.target.value)} 
           className="chat-input"
           style={styles.input}
@@ -157,7 +158,7 @@ const ChatComponent = () => {
         </button>
       </form>
       
-      {/* Basit CSS Animation (Opsiyonel) */}
+      {/* Einfache CSS-Animation (Optional) */}
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -166,7 +167,7 @@ const ChatComponent = () => {
   );
 };
 
-// --- STİLLER ---
+// --- STYLES ---
 const styles = {
   container: { 
     display: 'flex', 

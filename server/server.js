@@ -14,7 +14,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- MODELLERİN HAZIRLANMASI ---
+// --- VORBEREITUNG DER MODELLE ---
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 let extractor;
@@ -25,12 +25,12 @@ const getExtractor = async () => {
   return extractor;
 };
 
-// --- MONGODB BAĞLANTISI ---
+// --- MONGODB VERBINDUNG ---
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("🚀 MongoDB & Vector Search Hazır!"))
-  .catch(err => console.error("❌ Bağlantı Hatası:", err));
+  .then(() => console.log("🚀 MongoDB & Vektorsuche bereit!"))
+  .catch(err => console.error("❌ Verbindungsfehler:", err));
 
-// --- CHAT ŞEMASI ---
+// --- CHAT SCHEMA ---
 const chatSchema = new mongoose.Schema({
   role: String,
   content: String,
@@ -38,34 +38,34 @@ const chatSchema = new mongoose.Schema({
 });
 const Chat = mongoose.model('Chat', chatSchema);
 
-// --- ENDPOINT: Geçmişi Getir ---
+// --- ENDPOINT: Verlauf abrufen ---
 app.get('/api/history', async (req, res) => {
   try {
     const history = await Chat.find().sort({ createdAt: 1 }).limit(50);
     res.json(history);
   } catch (error) {
-    res.status(500).json({ error: "Geçmiş yüklenemedi" });
+    res.status(500).json({ error: "Verlauf konnte nicht geladen werden" });
   }
 });
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// --- ENDPOINT: PDF YÜKLEME (Kategorili) ---
+// --- ENDPOINT: PDF UPLOAD (Mit Kategorie) ---
 app.post('/api/upload-pdf', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).send("Dosya yüklenmedi.");
+    if (!req.file) return res.status(400).send("Keine Datei hochgeladen.");
     const { category } = req.body;
 
     const data = await pdf(req.file.buffer); 
     
     const fullText = data.text;
     if (!fullText || fullText.trim().length === 0) {
-      return res.status(400).json({ error: "PDF içeriği boş." });
+      return res.status(400).json({ error: "PDF-Inhalt ist leer." });
     }
 
     const cleanText = fullText.replace(/\s+/g, ' ').trim();
 
-    // Chunking
+    // Chunking (Aufteilung in Abschnitte)
     const chunks = [];
     let currentPos = 0;
     while (currentPos < cleanText.length) {
@@ -74,7 +74,7 @@ app.post('/api/upload-pdf', upload.single('file'), async (req, res) => {
     }
 
     const generateEmbedding = await getExtractor();
-    console.log(`⏳ ${chunks.length} parça "${category}" kategorisi için işleniyor...`);
+    console.log(`⏳ ${chunks.length} Abschnitte werden für Kategorie "${category}" verarbeitet...`);
 
     const docsToSave = [];
     for (const chunk of chunks) {
@@ -86,56 +86,57 @@ app.post('/api/upload-pdf', upload.single('file'), async (req, res) => {
         embedding: Array.from(output.data),
         metadata: { 
           source: 'user-upload', 
-          category: category || 'genel',
+          // Hier ändern wir 'genel' zu 'allgemein', passend zum Frontend
+          category: category || 'allgemein', 
           uploadedAt: new Date() 
         }
       });
     }
 
     await Knowledge.insertMany(docsToSave);
-    res.json({ message: `Döküman ${category} kategorisine eklendi!` });
+    res.json({ message: `Dokument zur Kategorie ${category} hinzugefügt!` });
 
   } catch (error) {
-    console.error("Yükleme Hatası:", error);
-    res.status(500).json({ error: "PDF işlenirken bir hata oluştu." });
+    console.error("Upload-Fehler:", error);
+    res.status(500).json({ error: "Fehler bei der PDF-Verarbeitung." });
   }
 });
 
-// --- ENDPOINT: RAG CHAT (useChat v5 uyumlu) ---
+// --- ENDPOINT: RAG CHAT (useChat v5 kompatibel) ---
 app.post('/api/rag-chat', async (req, res) => {
-  console.log("📨 /api/rag-chat endpoint'e istek geldi");
-  console.log("📦 Request body:", JSON.stringify(req.body, null, 2));
+  console.log("📨 Anfrage an /api/rag-chat Endpoint erhalten");
+  // console.log("📦 Request body:", JSON.stringify(req.body, null, 2));
 
   try {
-    // useChat v5, mesajları 'messages' array'i içinde gönderir
+    // useChat v5 sendet Nachrichten im 'messages'-Array
     const { messages, category } = req.body;
     
-    console.log("📋 Messages:", messages);
-    console.log("📂 Category:", category);
+    // console.log("📋 Messages:", messages);
+    console.log("📂 Kategorie:", category);
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      console.error("❌ Geçersiz mesaj formatı");
-      return res.status(400).json({ error: "Mesaj bulunamadı" });
+      console.error("❌ Ungültiges Nachrichtenformat");
+      return res.status(400).json({ error: "Keine Nachricht gefunden" });
     }
 
-    // Son mesajı al (kullanıcının sorusu)
+    // Letzte Nachricht abrufen (Frage des Benutzers)
     const lastMessage = messages[messages.length - 1];
     const question = lastMessage.content;
     
-    console.log("❓ Soru:", question);
+    console.log("❓ Frage:", question);
 
     if (!question) {
-      return res.status(400).json({ error: "Soru bulunamadı." });
+      return res.status(400).json({ error: "Frage nicht gefunden." });
     }
 
-    // 2. Soruyu Vektöre Çevir
-    console.log("🔄 Embedding oluşturuluyor...");
+    // 2. Frage in Vektor umwandeln
+    console.log("🔄 Embedding wird erstellt...");
     const generateEmbedding = await getExtractor();
     const output = await generateEmbedding(question, { pooling: 'mean', normalize: true });
     const questionVector = Array.from(output.data);
-    console.log("✅ Embedding oluşturuldu");
+    console.log("✅ Embedding erstellt");
 
-    // 3. MongoDB Vektör Araması
+    // 3. MongoDB Vektorsuche
     const searchPipeline = {
       index: "default",
       path: "embedding",
@@ -144,44 +145,46 @@ app.post('/api/rag-chat', async (req, res) => {
       limit: 3,
     };
 
-    if (category && category !== "Genel" && category !== "Tümü") {
+    // Filter-Logik anpassen ("Genel" -> "Allgemein")
+    if (category && category !== "Allgemein" && category !== "Alle") {
       searchPipeline.filter = {
         "metadata.category": { $eq: category }
       };
-      console.log("🔍 Filtreleme aktif:", category);
+      console.log("🔍 Filterung aktiv:", category);
     }
-    console.log(`🕵️‍♂️ DEDEKTİF MODU: "${category}" kategorisi kontrol ediliyor...`);
+    console.log(`🕵️‍♂️ DETEKTIV-MODUS: Kategorie "${category}" wird überprüft...`);
     
-    // 1. Standart MongoDB Araması (Vektörsüz)
+    // 1. Standard MongoDB Suche (ohne Vektoren)
     const count = await Knowledge.countDocuments({ "metadata.category": category });
-    console.log(`📊 Veritabanında "${category}" etiketli kaç belge var?: ${count}`);
+    console.log(`📊 Wie viele Dokumente gibt es mit dem Tag "${category}"?: ${count}`);
     
-    // 2. Örnek bir veri görelim (Varsa)
+    // 2. Beispieldaten anzeigen (falls vorhanden)
     if (count > 0) {
       const sample = await Knowledge.findOne({ "metadata.category": category }).select('metadata');
-      console.log("🧬 Örnek Veri Metadata:", JSON.stringify(sample.metadata, null, 2));
+      console.log("🧬 Beispiel-Metadaten:", JSON.stringify(sample.metadata, null, 2));
     } else {
-      console.log("⚠️ UYARI: Bu kategoride hiç veri yok! Filtreleme bu yüzden 0 dönüyor.");
+      console.log("⚠️ WARNUNG: Keine Daten in dieser Kategorie! Filterung gibt daher 0 zurück.");
     }
 
-    console.log("🔎 Vektör araması yapılıyor...");
+    console.log("🔎 Vektorsuche wird durchgeführt...");
     const documents = await Knowledge.aggregate([
       { $vectorSearch: searchPipeline }
     ]);
 
     const context = documents.length > 0 
       ? documents.map(doc => doc.content).join("\n---\n")
-      : "Bu konuyla ilgili veritabanında bilgi bulunamadı.";
+      : "Zu diesem Thema wurden keine Informationen in der Datenbank gefunden.";
 
-    console.log(`📚 Kategori: ${category || 'Genel'} | Bulunan Parça: ${documents.length}`);
+    console.log(`📚 Kategorie: ${category || 'Allgemein'} | Gefundene Teile: ${documents.length}`);
 
-    // 4. Groq'a Gönder (Streaming)
-    console.log("🤖 Groq'a istek gönderiliyor...");
+    // 4. An Groq senden (Streaming)
+    console.log("🤖 Anfrage an Groq wird gesendet...");
     const completion = await groq.chat.completions.create({
       messages: [
         { 
           role: "system", 
-          content: `Sen yardımsever bir asistansın. Aşağıdaki bilgilere dayanarak cevap ver:\n\nBİLGİLER:\n${context}` 
+          // System Prompt auf Deutsch übersetzt
+          content: `Du bist ein hilfreicher Assistent. Antworte basierend auf den folgenden Informationen:\n\nINFORMATIONEN:\n${context}` 
         },
         { role: "user", content: question }
       ],
@@ -189,7 +192,7 @@ app.post('/api/rag-chat', async (req, res) => {
       stream: true,
     });
 
-    // text/plain stream olarak gönder
+    // text/plain Stream senden
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Cache-Control', 'no-cache');
@@ -204,18 +207,18 @@ app.post('/api/rag-chat', async (req, res) => {
         fullResponse += content;
         chunkCount++;
         res.write(content);
-        console.log(`📤 Chunk ${chunkCount} gönderildi`);
+        console.log(`📤 Chunk ${chunkCount} gesendet`);
       }
     }
 
-    console.log(`✅ Stream tamamlandı. Toplam ${chunkCount} chunk gönderildi`);
+    console.log(`✅ Stream beendet. Insgesamt ${chunkCount} Chunks gesendet`);
 
-    // Veritabanına kaydet
+    // In Datenbank speichern
     await Chat.create([
       { role: 'user', content: question },
       { role: 'assistant', content: fullResponse }
     ]);
-    console.log("💾 Mesajlar veritabanına kaydedildi");
+    console.log("💾 Nachrichten in Datenbank gespeichert");
 
     res.end();
     
@@ -230,4 +233,4 @@ app.post('/api/rag-chat', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🎧 Server ${PORT} portunda yayında...`));
+app.listen(PORT, () => console.log(`🎧 Server läuft auf Port ${PORT}...`));
