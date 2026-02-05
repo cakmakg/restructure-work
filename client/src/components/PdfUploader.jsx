@@ -18,9 +18,14 @@ export default function PdfUploader() {
     formData.append('category', category); // Kategoriename (wird req.body.category sein)
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload-pdf', {
+  
+      // API adresini dinamik al
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      // Fetch çağrısını yap (Dikkat: Parantez ve virgül kullanımına bak)
+      const res = await fetch(`${API_URL}/api/upload-pdf`, {
         method: 'POST',
-        body: formData, // Header ist nicht nötig, der Browser setzt das automatisch für FormData
+        body: formData, // Header eklemene gerek yok, tarayıcı FormData için otomatik ayarlar
       });
 
       const data = await res.json();

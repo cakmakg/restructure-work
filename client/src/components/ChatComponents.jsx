@@ -33,8 +33,11 @@ const ChatComponent = () => {
     setIsLoading(true);
 
     try {
+      // API adresini ortam değişkeninden al, yoksa localhost kullan
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
       // 2. Anfrage an das Backend senden (manueller Fetch)
-      const response = await fetch('http://localhost:5000/api/rag-chat', {
+      const response = await fetch(`${API_URL}/api/rag-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
