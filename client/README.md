@@ -1,16 +1,73 @@
-# React + Vite
+Harika, projenin GitHub'da uluslararası bir kitleye veya Almanca konuşan geliştiricilere hitap etmesi için README.md dosyanın Almanca versiyonunu aşağıda hazırladım.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bunu projenin kök dizinine README.md olarak (veya istersen README_DE.md olarak) kaydedebilirsin.
 
-Currently, two official plugins are available:
+🤖 RAG-Basierter KI-Chat-Assistent (MERN Stack)
+Dieses Projekt ist eine RAG-Anwendung (Retrieval-Augmented Generation), die es Benutzern ermöglicht, eigene PDF-Dokumente hochzuladen und einen KI-gestützten Chat über diese Inhalte zu führen.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Benutzer können Dokumente in bestimmte Kategorien einteilen und beim Stellen von Fragen Antworten erhalten, die nur auf den Daten der ausgewählten Kategorie basieren.
 
-## React Compiler
+🚀 Über das Projekt
+Diese Anwendung geht über Standard-Chatbots hinaus und ermöglicht es Ihnen, mit Ihren eigenen Daten zu sprechen. Die RAG-Architektur wird verwendet, um Halluzinationen von LLMs (Large Language Models) zu verhindern und präzise Informationen bereitzustellen.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Hauptmerkmale:
 
-## Expanding the ESLint configuration
+📄 PDF-Upload & Verarbeitung: Wandelt PDF-Dateien in Text um und unterteilt sie in Abschnitte (Chunking).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+🗂️ Kategoriebasierte Filterung: Daten werden beim Hochladen getaggt (z. B. "Test-1", "Vorlesungsnotizen"). Suchanfragen werden nur innerhalb der ausgewählten Kategorie durchgeführt.
+
+🧠 Vektorsuche (Vector Search): Semantische Suche wird mithilfe von MongoDB Atlas Vector Search durchgeführt.
+
+⚡ Streaming-Antwort: Die KI-Antwort erscheint Teil für Teil auf dem Bildschirm (Echtzeit-Erlebnis wie bei einer Schreibmaschine).
+
+🔒 Lokale Embeddings: Die Vektorisierung (Embedding) erfolgt serverseitig (Xenova/transformers), um externe Abhängigkeiten zu reduzieren.
+
+🛠️ Technologien (Tech Stack)
+Dieses Projekt wurde mit modernen Webtechnologien entwickelt:
+
+Frontend
+React (Vite): Schnelle und modulare Benutzeroberfläche.
+
+Fetch API (Stream Reader): Zum Lesen der stückweise übertragenen Daten vom Backend.
+
+CSS Modules / Inline Styles: Sauberes und angepasstes Design.
+
+Backend
+Node.js & Express: API- und Serververwaltung.
+
+Multer: Verarbeitung von Datei-Uploads.
+
+PDF-Parse: Konvertierung von PDF-Inhalten in Text.
+
+LangChain / Transformers.js: Umwandlung von Texten in Vektorformate (Embeddings).
+
+Groq SDK (Llama-3): Hochgeschwindigkeits-LLM (KI-Engine).
+
+Datenbank
+MongoDB Atlas: Datenspeicherung.
+
+Atlas Vector Search: Vektorbasierte Dokumentensuche und Filterung.
+
+⚙️ Installation
+Befolgen Sie diese Schritte, um das Projekt auf Ihrem lokalen Computer auszuführen:
+
+1. Repository klonen
+Bash
+git clone https://github.com/IHR_BENUTZERNAME/REPO_NAME.git
+cd REPO_NAME
+2. Backend-Einrichtung
+Wechseln Sie in das Server-Verzeichnis und installieren Sie die Abhängigkeiten:
+
+Bash
+cd server
+npm install
+Erstellen Sie eine .env-Datei im server-Ordner und fügen Sie folgende Informationen hinzu:
+
+Kod snippet'i
+PORT=5000
+MONGODB_URI=mongodb+srv://<benutzer>:<passwort>@cluster.mongodb.net/rag_db?retryWrites=true&w=majority
+GROQ_API_KEY=gsk_... (Ihr Groq API-Schlüssel)
+Starten Sie den Server:
+
+Bash
+node server.js
