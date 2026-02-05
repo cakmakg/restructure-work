@@ -2,11 +2,12 @@ import mongoose from 'mongoose';
 
 const knowledgeSchema = new mongoose.Schema({
   title: String,
-  content: String, // Okunabilir metin
-  embedding: [Number], // OpenAI'dan gelecek olan vektör dizisi (1536 adet sayı)
+  content: String,
+  embedding: [Number],
   metadata: {
     source: String,
-    category: String
+    category: String, // <--- BURASI KRİTİK: 'proje1', 'kullanici_A' gibi değerler tutacak
+    uploadedAt: Date
   }
 });
 

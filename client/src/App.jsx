@@ -1,16 +1,21 @@
-import ChatComponents from './components/ChatComponents';
-import './App.css'; // Stil dosyanı buraya ekleyebilirsin
+import ChatComponent from './components/ChatComponents';
+import PdfUploader from './components/PdfUploader'; // Yeni ekledik
+import './App.css';
 
 function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>MERN AI Assistant</h1>
-        <p>GPT-4o & Node.js ile güçlendirildi</p>
+        <h1>MERN AI Knowledge Base</h1>
+        <p>PDF Yükle ve Özel Asistanınla Sohbet Et</p>
       </header>
       
       <main>
-        <ChatComponents />
+        {/* PDF Yükleme Alanı */}
+        <PdfUploader /> 
+        
+        {/* Sohbet Alanı */}
+        <ChatComponent />
       </main>
     </div>
   );
