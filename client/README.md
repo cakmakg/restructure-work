@@ -71,3 +71,25 @@ Starten Sie den Server:
 
 Bash
 node server.js
+
+🧠 Wie es funktioniert (Architektur)
+Aufnahme (Ingestion): Der Benutzer lädt ein PDF hoch und legt eine Kategorie fest (z. B. HR-Richtlinien).
+
+Einbettung (Embedding): Das Backend unterteilt den PDF-Text in kleine Stücke und wandelt jedes Stück in numerische Vektoren um.
+
+Speicherung: Vektoren und Textteile werden zusammen mit dem Kategorie-Tag in MongoDB gespeichert.
+
+Abruf (Retrieval): Wenn der Benutzer eine Frage stellt, wird diese Frage ebenfalls in einen Vektor umgewandelt.
+
+Suche: MongoDB Atlas findet die semantisch ähnlichsten Dokumententeile zum Fragevektor (nur innerhalb der ausgewählten Kategorie!).
+
+Generierung: Die gefundenen Teile + die Benutzerfrage werden an die Groq API (Llama-3) gesendet. Die KI generiert daraufhin die Antwort basierend auf diesen Informationen.
+
+🔮 Roadmap (Geplante Funktionen)
+[ ] Verbesserte Benutzeroberfläche (UI/UX).
+
+[ ] Speichern des Chatverlaufs (Chat History).
+
+[ ] Unterstützung für weitere Dateiformate (Word, Txt).
+
+[ ] Mehrsprachigkeit.
