@@ -1,4 +1,8 @@
-🤖 RAG-Basierter KI-Chat-Assistent (MERN Stack) Dieses Projekt ist eine RAG-Anwendung (Retrieval-Augmented Generation), die es Benutzern ermöglicht, eigene PDF-Dokumente hochzuladen und einen KI-gestützten Chat über diese Inhalte zu führen.
+🤖 RAG-Basierter KI-Chat-Assistent (MERN Stack) Dieses Projekt ist eine RAG-Anwendung 
+![Proje Önizleme](./client/assets/projeckt.png)
+*(Buraya kendi resim dosyanın adını yaz)*
+
+(Retrieval-Augmented Generation), die es Benutzern ermöglicht, eigene PDF-Dokumente hochzuladen und einen KI-gestützten Chat über diese Inhalte zu führen.
 
 Benutzer können Dokumente in bestimmte Kategorien einteilen und beim Stellen von Fragen Antworten erhalten, die nur auf den Daten der ausgewählten Kategorie basieren.
 
